@@ -1,4 +1,7 @@
 var AM = new AssetManager();
+var socket = io.connect("http://24.16.255.56:8888");
+
+
 //var snd = new Audio("./sounds/mk.mp3");
 // snd.volume = .05
 // snd.play();
@@ -95,102 +98,9 @@ Rectangle.prototype.overlaps = function(r) {
 			r.top < this.bottom);
 }
 
-// possibles axis to move the camera
-var AXIS = {
-	NONE: "none", 
-	HORIZONTAL: "horizontal", 
-	VERTICAL: "vertical", 
-	BOTH: "both"
-};
 
-// Camera constructor
-function Camera(xView, yView, canvasWidth, canvasHeight, worldWidth, worldHeight, gameEngine)
-{
-	// position of camera (left-top coordinate)
-	this.xView = xView || 0;
-	this.yView = yView || 0;
-	
-	// distance from followed object to border before camera starts move
-	this.xDeadZone = 0; // min distance to horizontal borders
-	this.yDeadZone = 0; // min distance to vertical borders
-	
-	// viewport dimensions
-	this.wView = canvasWidth;
-	this.hView = canvasHeight;			
-	
-	// allow camera to move in vertical and horizontal axis
-	this.axis = AXIS.BOTH;	
 
-	// object that should be followed
-	this.followed = null;
-	
-	// rectangle that represents the viewport
-	this.viewportRect = new Rectangle(this.xView, this.yView, this.wView, this.hView);		
-						
-	// rectangle that represents the world's boundary (room's boundary)
-	this.worldRect = new Rectangle(0, 0, worldWidth, worldHeight);
 
-	this.gameEngine = gameEngine;
-	
-}
-
-Camera.prototype = new Entity();
-Camera.prototype.constructor = Camera;
-
-// gameObject needs to have "x" and "y" properties (as world(or room) position)
-Camera.prototype.follow = function(gameObject, xDeadZone, yDeadZone)
-{		
-	this.followed = gameObject;	
-	this.xDeadZone = xDeadZone;
-	this.yDeadZone = yDeadZone;
-}					
-
-Camera.prototype.update = function() {
-	// keep following the player (or other desired object)
-	if(this.followed != null)
-	{		
-		if(this.axis == AXIS.HORIZONTAL || this.axis == AXIS.BOTH)
-		{		
-			// moves camera on horizontal axis based on followed object position
-			if(this.followed.x - this.xView  + this.xDeadZone > this.wView)
-				this.xView = this.followed.x - (this.wView - this.xDeadZone);
-			else if(this.followed.x  - this.xDeadZone < this.xView)
-				this.xView = this.followed.x  - this.xDeadZone;
-			this.gameEngine.xView = this.xView;
-			
-		}
-		if(this.axis == AXIS.VERTICAL || this.axis == AXIS.BOTH)
-		{
-			// moves camera on vertical axis based on followed object position
-			if(this.followed.y - this.yView + this.yDeadZone > this.hView)
-				this.yView = this.followed.y - (this.hView - this.yDeadZone);
-			else if(this.followed.y - this.yDeadZone < this.yView)
-				this.yView = this.followed.y - this.yDeadZone;
-		}						
-	}		
-	
-	// update viewportRect
-	this.viewportRect.set(this.xView, this.yView);
-	
-	// don't let camera leaves the world's boundary
-	if(!this.viewportRect.within(this.worldRect))
-	{
-		if(this.viewportRect.left < this.worldRect.left)
-			this.xView = this.worldRect.left;
-		if(this.viewportRect.top < this.worldRect.top)					
-			this.yView = this.worldRect.top;
-		if(this.viewportRect.right > this.worldRect.right)
-			this.xView = this.worldRect.right - this.wView;
-		if(this.viewportRect.bottom > this.worldRect.bottom)					
-			this.yView = this.worldRect.bottom - this.hView;
-	}
-	this.gameEngine.xView = this.xView;
-	
-}	
-
-Camera.prototype.draw = function() {
-	
-}
 
 
 
@@ -215,26 +125,6 @@ Box.prototype.collide = function(other) {
 		&& this.y + this.height > other.y);
 }
 
-function HealthBar(hp, game, x, y) {
-	this.hp = hp;
-	this.color = "red";
-	this.game = game;
-	this.x = x;
-	this.y = y;
-}
-
-HealthBar.prototype = new Entity();
-HealthBar.prototype.constructor = HealthBar;
-
-HealthBar.prototype.update = function() {
-
-}
-
-HealthBar.prototype.draw = function(ctx) {
-	ctx.fillStyle = this.color;
-	ctx.fillRect(this.x, this.y, this.hp * 5, 20);
-}
-
 AM.queueDownload("./img/Mario.png");
 AM.queueDownload("./img/MarioReverse.png");
 AM.queueDownload("./img/Boo.png");
@@ -247,13 +137,97 @@ AM.downloadAll(function () {
 	var ctx = canvas.getContext("2d");
 
 	var gameEngine = new GameEngine();
-	gameEngine.Camera = Camera;
 	gameEngine.Rectangle = Rectangle;
 	var bg = new Background(gameEngine, AM.getAsset("./img/marioBG.gif"));
 	var mario = new Mario(gameEngine,500,420);
 	var boo = new Boo(gameEngine,500,420);
-	var camera = new Camera(0, 0, canvas.width, canvas.height, 3840, 720, gameEngine);
-	//var goku = new Gokku(gameEngine);
+	gameEngine.addEntity(bg);
+	gameEngine.addEntity(boo);
+	gameEngine.addEntity(mario);
+	gameEngine.init(ctx);
+	gameEngine.start();
+
+
+	socket.on("load", function (data) {
+		var entities = data.gameState;
+		gameEngine.entities = [];
+		gameEngine.addEntity(bg);
+		for(var i =0; i < entities.length; i++) {
+			if (entities[i].name == "Mario"){
+				// mario = new Mario(gameEngine, entities[i].x, entities[i].y)
+				// mario.x= entities[i].x;
+				// mario.y= entities[i].y;
+				// mario.count = entities[i].count;
+				// mario.count2 = entities[i].count2;
+				// mario.right = entities[i].right;
+				// mario.stop = entities[i].stop;
+				// mario.stop2 = entities[i].stop2;
+				// mario.entRight = entities[i].entRight;
+				// mario.entLeft = entities[i].entLeft;
+				gameEngine.addEntity(new Mario(gameEngine, entities[i].x, entities[i].y));
+			}
+			if (entities[i].name == "Boo"){
+				//boo = null;
+				gameEngine.addEntity(new Boo(gameEngine, entities[i].x, entities[i].y));
+			}
+			
+		}
+	});
+	document.getElementById("save").onclick = function(e) {
+		e.preventDefault();
+		console.log(gameEngine.entities);
+		//gameEngine.entites = [];
+		var entities = gameEngine.entities;
+		//var entities = gameEngine.entities;
+		//the data that is to be sended
+		var savedState = { studentname: "Mahad Fahiye", statename: "savedData", gameState: [] };
+		for (var i = 0; i < gameEngine.entities.length; i++) {
+			if (gameEngine.entities[i].name === "Mario") {
+				var mario = gameEngine.entities[i];
+				savedState.gameState.push({
+					name: "Mario",
+					x: mario.x,
+					y: mario.y,
+					count: mario.count,
+					count2: mario.count2,
+					right: mario.right, 
+					stop: mario.stop,
+					stop2: mario.stop2,
+					entRight: mario.entRight,
+					entLeft: mario.entLeft
+				});
+			} else if(gameEngine.entities[i].name === "Boo") {
+				var boo = gameEngine.entities[i];
+				savedState.gameState.push({name: "Boo",
+				x: boo.x,
+				y: boo.y
+				});
+				
+			}
+		}
+
+		//send the data to the server to be saved
+		socket.emit("save", savedState);  
+	} 
+	document.getElementById("load").onclick = function(e) {
+		e.preventDefault();
+		console.log("Trying to load");
+		socket.emit("load", { studentname: "Mahad Fahiye", statename: "savedData" });
+	}
+	socket.on("connect", function () {
+		console.log("Socket connected.")
+	});
+	socket.on("disconnect", function () {
+		console.log("Socket disconnected.")
+	});
+	socket.on("reconnect", function () {
+		console.log("Socket reconnected.")
+	});
+	
+	// socket.emit("save", { studentname: "Chris Marriott", statename: "aState", data: "Goodbye World" });
+	// socket.emit("load", { studentname: "Chris Marriott", statename: "aState" });
+	// socket.emit("load", { studentname: "Chris Marriott", statename: "theState" });
+	// //var goku = new Gokku(gameEngine);
 	//camera.follow(mario, canvas.width/2, canvas.height/2);
 
 	//subzero.healthBar.x = 600;
@@ -262,9 +236,7 @@ AM.downloadAll(function () {
 	// $('.enter_link').click(function() { 
     //     $(this).parent().fadeOut(500);
 //  });
-	gameEngine.addEntity(bg);
-	gameEngine.addEntity(boo);
-	gameEngine.addEntity(mario);
+	
 	//gameEngine.addEntity(camera);
 
 
@@ -273,7 +245,6 @@ AM.downloadAll(function () {
 	//gameEngine.addEntity(subzero);
 	//gameEngine.addEntity(ryu);
 
-	gameEngine.init(ctx);
-	gameEngine.start();
+	
 
 })

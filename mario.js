@@ -3,6 +3,13 @@ this.name = "Mario";
 this.facing  = "R";
 this.actualWidth = 19;
 this.actualHeight = 35;
+this.count = 0;
+this.count2 = 0
+this.right = false;
+this.stop = 0;
+this.stop2 = 0;
+this.entRight = false;
+this.entLeft = false;
     //this.animation = new Animation(AM.getAsset("./img/RobotMario.png"), 0, 0, 206, 110, 0.02, 30, true, true);
    // (spriteSheet, startX, startY, frameWidth, frameHeight, frameDuration, frames, loop, reverse)
 this.MovingFrames = [new Frame(9,88,19,35),new Frame(30,88,19,35),new Frame(51,88,19,35),new Frame(72,88,19,35),
@@ -29,13 +36,12 @@ this.MovingFrames = [new Frame(9,88,19,35),new Frame(30,88,19,35),new Frame(51,8
     this.ground = 400;
     this.scaleBy = 5;
     this.speed = 5;
-    this.xView = x;
-    this.yView = y;
+    this.x = x;
+    this.y = y;
     this.movingRight = false;
     this.movingLeft = false;
     this.currentBox = (20, 120, 96 * this.scaleBy, 158 * this.scaleBy);
     this.velocity = { x: 5 * 1000, y: 5 * 1000 };
-    this.healthBar = new HealthBar(100, this.game);
     
     Entity.call(this, game, x, y);
 }
@@ -52,18 +58,13 @@ Mario.prototype.collide = function(other) {
 Mario.prototype.isAttacking = function() {
 	return (this.kicking)
 }
-var count = 0;
-var count2 = 0
+
 var range = 200;
 var spotted = true;
 var rightWall = 1190;
 var leftWall = -5;
 var distance = -500;
-var entRight = false;
-var entLeft = false;
-var right = false;
-var stop = 0;
-var stop2 = 0;
+
 Mario.prototype.update = function () {
     // if(this.game.moveLeft) {
     //     this.movingLeft = true;
@@ -77,54 +78,54 @@ Mario.prototype.update = function () {
     // }
     
     
-    if(this.x != rightWall && !right) {
-        count++;
+    if(this.x != rightWall && !this.right) {
+        this.count++;
         this.movingRight = true;
-        console.log("STOP" + stop)
-        if(count % 20 == 0) {
-            stop ++
+        //console.log("STOP" + stop)
+        if(this.count % 20 == 0) {
+            this.stop ++
         }
-        if(stop > 5 && entRight) {
+        if(this.stop > 5 && this.entRight) {
            // console.log("I stopped!")
             
             this.movingRight = false;
             this.currentAnimation = this.idleAnimation;
             this.facing = "L"
-        }if(stop > 12) {
+        }if(this.stop > 12) {
             this.facing = "R";
             this.movingRight = true;
-            stop = 0
+            this.stop = 0
         }
         
     }
     else{
         this.movingRight = false;
         //this.facing = "L"
-        right = true;
-        count = 0
+        this.right = true;
+        this.count = 0
 
     }
-    if(this.x >=-5 && right) {
-        count2 ++;
+    if(this.x >=-5 && this.right) {
+        this.count2 ++;
         this.movingLeft = true;
-        if(count2 % 20 == 0) {
-            stop2++;
+        if(this.count2 % 20 == 0) {
+            this.stop2++;
         }
-        if(stop2 > 5 && entLeft) {
+        if(this.stop2 > 5 && this.entLeft) {
 
             this.facing = "R"
             this.movingLeft = false;
-        }if(stop2 > 12) {
+        }if(this.stop2 > 12) {
             this.facing ="L";
             this.movingLeft = true;
-            stop2 = 0
+            this.stop2 = 0
         }
 
     }else {
-        right = false;
+        this.right = false;
         this.movingLeft = false;
         //this.facing = "R"
-        count2 = 0;
+        this.count2 = 0;
     }
     
 
@@ -191,16 +192,16 @@ Mario.prototype.update = function () {
                 ent.disappearAnimation.elapsedTime = 0;
             }
             if(this.x < ent.x && (Math.abs(this.x - ent.x) > range)) {
-                                        entLeft = true;
-                                        entRight = false;
+                                        this.entLeft = true;
+                                        this.entRight = false;
                 						ent.facing = "L";
                 						ent.currentAnimation = ent.animation;
                 						
                 						ent.x -= ent.speed;
                 					}
                 else if(this.x > ent.x && (Math.abs(this.x - ent.x) > range-10)) {
-                                        entLeft = false;
-                                        entRight = true;
+                                        this.entLeft = false;
+                                        this.entRight = true;
                 						ent.facing = "R";
                 						ent.currentAnimation = ent.Ranimation
                 						
@@ -236,15 +237,15 @@ Mario.prototype.update = function () {
                 if(ent.appearLeftAnimation.isDone()) {
                     ent.appearLeftAnimation.elapsedTime = 0;
                     spotted = true;
-                    count = 0;
-                    count2 = 0
+                    this.count = 0;
+                    this.count2 = 0
                     
                 }
                 if(ent.disappearLeftAnimation.isDone()) {
                     ent.disappearLeftAnimation.elapsedTime = 0;
                     spotted = true;
-                    count = 0;
-                    count2 = 0;
+                   this.count = 0;
+                    this.count2 = 0;
                 }
         }
     }
@@ -260,28 +261,7 @@ Mario.prototype.update = function () {
     Entity.prototype.update.call(this);
 }
 
-Mario.prototype.attackHandler = function(other, mult) {
-	if (this.currentAnimation === this.kickAnimation
-		|| this.currentAnimation === this.kickAnimation) {
-        other.healthBar.hp -= 0.5 * mult;
-        }
-	// } else if (this.currentAnimation === this.punchRight2Animation
-	// 	|| this.currentAnimation === this.punchLeft2Animation) {
-	// 	other.healthBar.hp -= 0.3 * mult;
-	// } else if (this.currentAnimation === this.punchRight3Animation
-	// 	|| this.currentAnimation === this.punchLeft3Animation) {
-	// 	other.healthBar.hp -= 0.15 * mult;		
-	// } else if (this.currentAnimation === this.kickRightAnimation
-	// 	|| this.currentAnimation === this.kickAnimation) {
-	// 	other.healthBar.hp -= 0.4 * mult;	
-	// } else if (this.currentAnimation === this.kickAnimation
-	// 	|| this.currentAnimation === this.kickAnimation) {
-	// 	other.healthBar.hp -= 0.2 * mult;
-	// }
-	if (!other.blocking) {
-		other.gettingAttacked = true;
-	}
-}
+
 
 Mario.prototype.draw = function (ctx) {
     //time = this.leftAnimation.elapsedTime;

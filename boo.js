@@ -46,13 +46,12 @@ function Boo(game,x,y) {
     this.ground = 400;
     this.scaleBy = 5;
     this.speed = 3;
-    this.xView = x;
-    this.yView = y;
+    this.x = x;
+    this.y = y;
     this.movingRight = false;
     this.movingLeft = false;
     this.currentBox = (20, 120, 96 * this.scaleBy, 158 * this.scaleBy);
     this.velocity = { x: 5 * 1000, y: 5 * 1000 };
-    this.healthBar = new HealthBar(100, this.game);
     
     Entity.call(this, game, x, y);
 }
@@ -82,7 +81,7 @@ Boo.prototype.update = function () {
     // }else{
     //     this.movingRight = false;
     // }
-    console.log(this.x);
+    console.log(this.name);
     if (this.movingRight) {
         console.log("Im here");
         //IF THIS IS NOT GETTING ATTACKED THE DO IT
@@ -136,28 +135,7 @@ Boo.prototype.update = function () {
     Entity.prototype.update.call(this);
 }
 
-Boo.prototype.attackHandler = function(other, mult) {
-	if (this.currentAnimation === this.kickAnimation
-		|| this.currentAnimation === this.kickAnimation) {
-        other.healthBar.hp -= 0.5 * mult;
-        }
-	// } else if (this.currentAnimation === this.punchRight2Animation
-	// 	|| this.currentAnimation === this.punchLeft2Animation) {
-	// 	other.healthBar.hp -= 0.3 * mult;
-	// } else if (this.currentAnimation === this.punchRight3Animation
-	// 	|| this.currentAnimation === this.punchLeft3Animation) {
-	// 	other.healthBar.hp -= 0.15 * mult;		
-	// } else if (this.currentAnimation === this.kickRightAnimation
-	// 	|| this.currentAnimation === this.kickAnimation) {
-	// 	other.healthBar.hp -= 0.4 * mult;	
-	// } else if (this.currentAnimation === this.kickAnimation
-	// 	|| this.currentAnimation === this.kickAnimation) {
-	// 	other.healthBar.hp -= 0.2 * mult;
-	// }
-	if (!other.blocking) {
-		other.gettingAttacked = true;
-	}
-}
+
 
 Boo.prototype.draw = function (ctx) {
     //time = this.leftAnimation.elapsedTime;
